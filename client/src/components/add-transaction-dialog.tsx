@@ -59,6 +59,7 @@ export function AddTransactionDialog({ open, onOpenChange }: AddTransactionDialo
       queryClient.invalidateQueries({ queryKey: ["/api/portfolio/summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/portfolio/allocation"] });
       queryClient.invalidateQueries({ queryKey: ["/api/portfolio/performance"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portfolio/details"] });
       toast({
         title: "Başarılı",
         description: "İşlem başarıyla eklendi",

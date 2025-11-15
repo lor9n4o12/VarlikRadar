@@ -142,6 +142,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/portfolio/details", async (req, res) => {
+    try {
+      const details = await storage.getAssetDetails();
+      res.json(details);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch asset details" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

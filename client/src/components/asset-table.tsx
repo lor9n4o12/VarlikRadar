@@ -22,6 +22,7 @@ export function AssetTable({ assets }: AssetTableProps) {
       queryClient.invalidateQueries({ queryKey: ["/api/portfolio/summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/portfolio/allocation"] });
       queryClient.invalidateQueries({ queryKey: ["/api/portfolio/performance"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portfolio/details"] });
       toast({
         title: "Başarılı",
         description: "Varlık başarıyla silindi",
@@ -36,13 +37,14 @@ export function AssetTable({ assets }: AssetTableProps) {
     },
   });
 
-  const formatCurrency = (amount: number, currency: string) => {
+  const formatCurrency = (amount: number | undefined, currency: string) => {
     const symbols: Record<string, string> = {
       TRY: "₺",
       USD: "$",
       EUR: "€",
     };
-    return `${symbols[currency] || ""}${amount.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const value = amount ?? 0;
+    return `${symbols[currency] || ""}${value.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   const formatPercent = (percent: number) => {

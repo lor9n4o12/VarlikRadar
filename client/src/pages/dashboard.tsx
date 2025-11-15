@@ -17,7 +17,7 @@ export default function Dashboard() {
   });
 
   const { data: assets, isLoading: assetsLoading, error: assetsError } = useQuery<AssetDetail[]>({
-    queryKey: ["/api/assets"],
+    queryKey: ["/api/portfolio/details"],
   });
 
   const { data: allocation, isLoading: allocationLoading, error: allocationError } = useQuery<AssetAllocation[]>({
