@@ -6,9 +6,12 @@ import {
   type PortfolioSummary,
   type AssetAllocation,
   type MonthlyPerformance,
-  type AssetDetail
+  type AssetDetail,
+  assets,
+  transactions
 } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
   // Asset operations
@@ -32,83 +35,65 @@ export interface IStorage {
   getAssetDetails(): Promise<AssetDetail[]>;
 }
 
-export class MemStorage implements IStorage {
-  private assets: Map<string, Asset>;
-  private transactions: Map<string, Transaction>;
-
-  constructor() {
-    this.assets = new Map();
-    this.transactions = new Map();
-  }
-
+export class DatabaseStorage implements IStorage {
   // Asset operations
   async getAssets(): Promise<Asset[]> {
-    return Array.from(this.assets.values());
+    return await db.select().from(assets);
   }
 
   async getAsset(id: string): Promise<Asset | undefined> {
-    return this.assets.get(id);
+    const [asset] = await db.select().from(assets).where(eq(assets.id, id));
+    return asset || undefined;
   }
 
   async createAsset(insertAsset: InsertAsset): Promise<Asset> {
-    const id = randomUUID();
-    const asset: Asset = {
-      quantity: "0",
-      currency: "TRY",
-      ...insertAsset,
-      id,
-      createdAt: new Date(),
-    };
-    this.assets.set(id, asset);
+    const [asset] = await db
+      .insert(assets)
+      .values(insertAsset)
+      .returning();
     return asset;
   }
 
   async updateAsset(id: string, updateData: Partial<InsertAsset>): Promise<Asset | undefined> {
-    const asset = this.assets.get(id);
-    if (!asset) return undefined;
-    
-    const updatedAsset: Asset = {
-      ...asset,
-      ...updateData,
-    };
-    this.assets.set(id, updatedAsset);
-    return updatedAsset;
+    const [asset] = await db
+      .update(assets)
+      .set(updateData)
+      .where(eq(assets.id, id))
+      .returning();
+    return asset || undefined;
   }
 
   async deleteAsset(id: string): Promise<boolean> {
-    return this.assets.delete(id);
+    const result = await db.delete(assets).where(eq(assets.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
   }
 
   // Transaction operations
   async getTransactions(): Promise<Transaction[]> {
-    return Array.from(this.transactions.values()).sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
+    return await db.select().from(transactions).orderBy(desc(transactions.date));
   }
 
   async getTransaction(id: string): Promise<Transaction | undefined> {
-    return this.transactions.get(id);
+    const [transaction] = await db.select().from(transactions).where(eq(transactions.id, id));
+    return transaction || undefined;
   }
 
   async getTransactionsByAsset(assetId: string): Promise<Transaction[]> {
-    return Array.from(this.transactions.values())
-      .filter((t) => t.assetId === assetId)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.assetId, assetId))
+      .orderBy(desc(transactions.date));
   }
 
   async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
-    const id = randomUUID();
-    const transaction: Transaction = {
-      currency: "TRY",
-      notes: null,
-      ...insertTransaction,
-      id,
-      createdAt: new Date(),
-    };
-    this.transactions.set(id, transaction);
+    const [transaction] = await db
+      .insert(transactions)
+      .values(insertTransaction)
+      .returning();
     
     // Update asset's average price and quantity if it's a buy/sell transaction
-    const asset = this.assets.get(insertTransaction.assetId);
+    const asset = await this.getAsset(insertTransaction.assetId);
     if (asset) {
       const currentQuantity = parseFloat(asset.quantity);
       const transactionQuantity = parseFloat(insertTransaction.quantity);
@@ -138,7 +123,8 @@ export class MemStorage implements IStorage {
   }
 
   async deleteTransaction(id: string): Promise<boolean> {
-    return this.transactions.delete(id);
+    const result = await db.delete(transactions).where(eq(transactions.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
   }
 
   // Portfolio calculations
@@ -308,4 +294,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
