@@ -95,13 +95,15 @@ export class DatabaseStorage implements IStorage {
     // Update asset's average price and quantity if it's a buy/sell transaction
     const asset = await this.getAsset(insertTransaction.assetId);
     if (asset) {
-      const currentQuantity = parseFloat(asset.quantity);
-      const transactionQuantity = parseFloat(insertTransaction.quantity);
-      const transactionPrice = parseFloat(insertTransaction.price);
+      // Safely coerce decimal strings to numbers with defaults
+      const currentQuantity = Number(asset.quantity) || 0;
+      const currentAveragePrice = Number(asset.averagePrice) || 0;
+      const transactionQuantity = Number(insertTransaction.quantity) || 0;
+      const transactionPrice = Number(insertTransaction.price) || 0;
       
       if (insertTransaction.type === "alış") {
         // Calculate new average price for buy
-        const currentValue = currentQuantity * parseFloat(asset.averagePrice);
+        const currentValue = currentQuantity * currentAveragePrice;
         const newValue = transactionQuantity * transactionPrice;
         const newQuantity = currentQuantity + transactionQuantity;
         const newAveragePrice = newQuantity > 0 ? (currentValue + newValue) / newQuantity : 0;
@@ -133,8 +135,8 @@ export class DatabaseStorage implements IStorage {
     
     let totalAssets = 0;
     assets.forEach((asset) => {
-      const quantity = parseFloat(asset.quantity);
-      const currentPrice = parseFloat(asset.currentPrice);
+      const quantity = Number(asset.quantity) || 0;
+      const currentPrice = Number(asset.currentPrice) || 0;
       totalAssets += quantity * currentPrice;
     });
     
@@ -144,8 +146,8 @@ export class DatabaseStorage implements IStorage {
     // Calculate monthly change (simplified - comparing to average price)
     let totalCost = 0;
     assets.forEach((asset) => {
-      const quantity = parseFloat(asset.quantity);
-      const averagePrice = parseFloat(asset.averagePrice);
+      const quantity = Number(asset.quantity) || 0;
+      const averagePrice = Number(asset.averagePrice) || 0;
       totalCost += quantity * averagePrice;
     });
     
@@ -169,8 +171,8 @@ export class DatabaseStorage implements IStorage {
     let total = 0;
     
     assets.forEach((asset) => {
-      const quantity = parseFloat(asset.quantity);
-      const currentPrice = parseFloat(asset.currentPrice);
+      const quantity = Number(asset.quantity) || 0;
+      const currentPrice = Number(asset.currentPrice) || 0;
       const value = quantity * currentPrice;
       total += value;
       
@@ -229,8 +231,8 @@ export class DatabaseStorage implements IStorage {
       
       relevantTransactions.forEach(transaction => {
         const existing = assetValuesAtDate.get(transaction.assetId) || { quantity: 0, averagePrice: 0 };
-        const transactionQuantity = parseFloat(transaction.quantity);
-        const transactionPrice = parseFloat(transaction.price);
+        const transactionQuantity = Number(transaction.quantity) || 0;
+        const transactionPrice = Number(transaction.price) || 0;
         
         if (transaction.type === "alış") {
           const currentValue = existing.quantity * existing.averagePrice;
@@ -256,7 +258,7 @@ export class DatabaseStorage implements IStorage {
       assetValuesAtDate.forEach((value, assetId) => {
         const asset = assets.find(a => a.id === assetId);
         if (asset && value.quantity > 0) {
-          totalValue += value.quantity * parseFloat(asset.currentPrice);
+          totalValue += value.quantity * (Number(asset.currentPrice) || 0);
         }
       });
       
@@ -273,9 +275,9 @@ export class DatabaseStorage implements IStorage {
     const assets = await this.getAssets();
     
     return assets.map((asset) => {
-      const quantity = parseFloat(asset.quantity);
-      const currentPrice = parseFloat(asset.currentPrice);
-      const averagePrice = parseFloat(asset.averagePrice);
+      const quantity = Number(asset.quantity) || 0;
+      const currentPrice = Number(asset.currentPrice) || 0;
+      const averagePrice = Number(asset.averagePrice) || 0;
       
       const totalValue = quantity * currentPrice;
       const totalCost = quantity * averagePrice;
