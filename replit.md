@@ -17,9 +17,20 @@ Kullanıcıların Borsa İstanbul hisseleri, ABD hisseleri, ETF'ler, kripto para
 - **State Management**: TanStack Query (React Query v5)
 - **Form Handling**: react-hook-form + Zod validation
 - **Charts**: Recharts
-- **Storage**: In-memory (MemStorage) - production için Neon PostgreSQL'e geçilebilir
+- **Database**: PostgreSQL (Neon) + Drizzle ORM
+- **Storage**: DatabaseStorage (persistent data)
 
 ## Son Güncellemeler (15 Kasım 2025)
+
+### PostgreSQL Database Migration (YENİ!)
+1. ✅ **Database Setup**: Neon PostgreSQL connection (server/db.ts)
+2. ✅ **Storage Migration**: MemStorage → DatabaseStorage with Drizzle ORM
+3. ✅ **Decimal Field Bug Fix**: parseFloat() → Number() || 0 (NaN prevention)
+4. ✅ **Data Persistence**: Tüm varlık ve işlemler database'de saklanıyor
+5. ✅ **Transaction Safety**: Asset quantity/averagePrice atomik güncellemeler
+6. ✅ **Production Ready**: End-to-end test başarılı, architect approved
+
+## MVP Tamamlandı (15 Kasım 2025)
 
 ### Kritik Düzeltmeler
 1. ✅ **Missing Endpoint**: `/api/portfolio/details` endpoint eklendi (critical bug fix!)
