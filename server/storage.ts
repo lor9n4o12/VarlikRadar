@@ -53,6 +53,8 @@ export class MemStorage implements IStorage {
   async createAsset(insertAsset: InsertAsset): Promise<Asset> {
     const id = randomUUID();
     const asset: Asset = {
+      quantity: "0",
+      currency: "TRY",
       ...insertAsset,
       id,
       createdAt: new Date(),
@@ -97,6 +99,8 @@ export class MemStorage implements IStorage {
   async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
     const id = randomUUID();
     const transaction: Transaction = {
+      currency: "TRY",
+      notes: null,
       ...insertTransaction,
       id,
       createdAt: new Date(),

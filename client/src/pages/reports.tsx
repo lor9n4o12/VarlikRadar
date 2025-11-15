@@ -10,7 +10,7 @@ export default function Reports() {
   });
 
   const { data: assets, isLoading: assetsLoading } = useQuery<AssetDetail[]>({
-    queryKey: ["/api/assets"],
+    queryKey: ["/api/portfolio/details"],
   });
 
   const formatCurrency = (amount: number) => {
@@ -26,7 +26,7 @@ export default function Reports() {
   };
 
   const getTotalByType = (type: string) => {
-    return getAssetsByType(type).reduce((sum, asset) => sum + asset.totalValue, 0);
+    return getAssetsByType(type).reduce((sum, asset) => sum + (asset.totalValue || 0), 0);
   };
 
   return (
@@ -131,9 +131,9 @@ export default function Reports() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="font-semibold">{formatCurrency(asset.totalValue)}</div>
-                            <div className={`text-sm ${asset.change >= 0 ? "text-success" : "text-destructive"}`}>
-                              {asset.change >= 0 ? "+" : ""}{asset.change.toFixed(2)}%
+                            <div className="font-semibold">{formatCurrency(asset.totalValue || 0)}</div>
+                            <div className={`text-sm ${(asset.change || 0) >= 0 ? "text-success" : "text-destructive"}`}>
+                              {(asset.change || 0) >= 0 ? "+" : ""}{(asset.change || 0).toFixed(2)}%
                             </div>
                           </div>
                         </div>
