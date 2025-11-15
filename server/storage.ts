@@ -1,37 +1,306 @@
-import { type User, type InsertUser } from "@shared/schema";
+import { 
+  type Asset, 
+  type InsertAsset, 
+  type Transaction, 
+  type InsertTransaction,
+  type PortfolioSummary,
+  type AssetAllocation,
+  type MonthlyPerformance,
+  type AssetDetail
+} from "@shared/schema";
 import { randomUUID } from "crypto";
 
-// modify the interface with any CRUD methods
-// you might need
-
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  // Asset operations
+  getAssets(): Promise<Asset[]>;
+  getAsset(id: string): Promise<Asset | undefined>;
+  createAsset(asset: InsertAsset): Promise<Asset>;
+  updateAsset(id: string, asset: Partial<InsertAsset>): Promise<Asset | undefined>;
+  deleteAsset(id: string): Promise<boolean>;
+  
+  // Transaction operations
+  getTransactions(): Promise<Transaction[]>;
+  getTransaction(id: string): Promise<Transaction | undefined>;
+  getTransactionsByAsset(assetId: string): Promise<Transaction[]>;
+  createTransaction(transaction: InsertTransaction): Promise<Transaction>;
+  deleteTransaction(id: string): Promise<boolean>;
+  
+  // Portfolio calculations
+  getPortfolioSummary(): Promise<PortfolioSummary>;
+  getAssetAllocation(): Promise<AssetAllocation[]>;
+  getMonthlyPerformance(): Promise<MonthlyPerformance[]>;
+  getAssetDetails(): Promise<AssetDetail[]>;
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<string, User>;
+  private assets: Map<string, Asset>;
+  private transactions: Map<string, Transaction>;
 
   constructor() {
-    this.users = new Map();
+    this.assets = new Map();
+    this.transactions = new Map();
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  // Asset operations
+  async getAssets(): Promise<Asset[]> {
+    return Array.from(this.assets.values());
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
+  async getAsset(id: string): Promise<Asset | undefined> {
+    return this.assets.get(id);
+  }
+
+  async createAsset(insertAsset: InsertAsset): Promise<Asset> {
+    const id = randomUUID();
+    const asset: Asset = {
+      ...insertAsset,
+      id,
+      createdAt: new Date(),
+    };
+    this.assets.set(id, asset);
+    return asset;
+  }
+
+  async updateAsset(id: string, updateData: Partial<InsertAsset>): Promise<Asset | undefined> {
+    const asset = this.assets.get(id);
+    if (!asset) return undefined;
+    
+    const updatedAsset: Asset = {
+      ...asset,
+      ...updateData,
+    };
+    this.assets.set(id, updatedAsset);
+    return updatedAsset;
+  }
+
+  async deleteAsset(id: string): Promise<boolean> {
+    return this.assets.delete(id);
+  }
+
+  // Transaction operations
+  async getTransactions(): Promise<Transaction[]> {
+    return Array.from(this.transactions.values()).sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async getTransaction(id: string): Promise<Transaction | undefined> {
+    return this.transactions.get(id);
+  }
+
+  async getTransactionsByAsset(assetId: string): Promise<Transaction[]> {
+    return Array.from(this.transactions.values())
+      .filter((t) => t.assetId === assetId)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+    const transaction: Transaction = {
+      ...insertTransaction,
+      id,
+      createdAt: new Date(),
+    };
+    this.transactions.set(id, transaction);
+    
+    // Update asset's average price and quantity if it's a buy/sell transaction
+    const asset = this.assets.get(insertTransaction.assetId);
+    if (asset) {
+      const currentQuantity = parseFloat(asset.quantity);
+      const transactionQuantity = parseFloat(insertTransaction.quantity);
+      const transactionPrice = parseFloat(insertTransaction.price);
+      
+      if (insertTransaction.type === "alış") {
+        // Calculate new average price for buy
+        const currentValue = currentQuantity * parseFloat(asset.averagePrice);
+        const newValue = transactionQuantity * transactionPrice;
+        const newQuantity = currentQuantity + transactionQuantity;
+        const newAveragePrice = newQuantity > 0 ? (currentValue + newValue) / newQuantity : 0;
+        
+        await this.updateAsset(insertTransaction.assetId, {
+          quantity: newQuantity.toString(),
+          averagePrice: newAveragePrice.toFixed(2),
+        });
+      } else if (insertTransaction.type === "satış") {
+        // Reduce quantity for sell
+        const newQuantity = currentQuantity - transactionQuantity;
+        await this.updateAsset(insertTransaction.assetId, {
+          quantity: Math.max(0, newQuantity).toString(),
+        });
+      }
+    }
+    
+    return transaction;
+  }
+
+  async deleteTransaction(id: string): Promise<boolean> {
+    return this.transactions.delete(id);
+  }
+
+  // Portfolio calculations
+  async getPortfolioSummary(): Promise<PortfolioSummary> {
+    const assets = await this.getAssets();
+    
+    let totalAssets = 0;
+    assets.forEach((asset) => {
+      const quantity = parseFloat(asset.quantity);
+      const currentPrice = parseFloat(asset.currentPrice);
+      totalAssets += quantity * currentPrice;
+    });
+    
+    const totalDebt = 0; // Not implemented for now
+    const netWorth = totalAssets - totalDebt;
+    
+    // Calculate monthly change (simplified - comparing to average price)
+    let totalCost = 0;
+    assets.forEach((asset) => {
+      const quantity = parseFloat(asset.quantity);
+      const averagePrice = parseFloat(asset.averagePrice);
+      totalCost += quantity * averagePrice;
+    });
+    
+    const monthlyChange = totalCost > 0 ? ((totalAssets - totalCost) / totalCost) * 100 : 0;
+    const monthlyChangeAmount = totalAssets - totalCost;
+    
+    return {
+      totalAssets,
+      totalDebt,
+      netWorth,
+      monthlyChange,
+      monthlyChangeAmount,
+    };
+  }
+
+  async getAssetAllocation(): Promise<AssetAllocation[]> {
+    const assets = await this.getAssets();
+    
+    // Group by asset type
+    const allocationMap = new Map<string, { value: number; count: number }>();
+    let total = 0;
+    
+    assets.forEach((asset) => {
+      const quantity = parseFloat(asset.quantity);
+      const currentPrice = parseFloat(asset.currentPrice);
+      const value = quantity * currentPrice;
+      total += value;
+      
+      const existing = allocationMap.get(asset.type) || { value: 0, count: 0 };
+      allocationMap.set(asset.type, {
+        value: existing.value + value,
+        count: existing.count + 1,
+      });
+    });
+    
+    const typeNames: Record<string, string> = {
+      hisse: "Hisse Senetleri",
+      etf: "ETF'ler",
+      kripto: "Kripto Paralar",
+      gayrimenkul: "Gayrimenkul",
+    };
+    
+    const colors: Record<string, string> = {
+      hisse: "hsl(var(--chart-1))",
+      etf: "hsl(var(--chart-2))",
+      kripto: "hsl(var(--chart-4))",
+      gayrimenkul: "hsl(var(--chart-5))",
+    };
+    
+    return Array.from(allocationMap.entries()).map(([type, data]) => ({
+      type: type as any,
+      name: typeNames[type] || type,
+      value: data.value,
+      percentage: total > 0 ? (data.value / total) * 100 : 0,
+      color: colors[type] || "hsl(var(--chart-1))",
+    }));
+  }
+
+  async getMonthlyPerformance(): Promise<MonthlyPerformance[]> {
+    const months = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    
+    // Calculate portfolio value for each of the last 12 months based on transactions
+    const performance: MonthlyPerformance[] = [];
+    const transactions = await this.getTransactions();
+    
+    for (let i = 11; i >= 0; i--) {
+      const targetDate = new Date(currentDate);
+      targetDate.setMonth(currentDate.getMonth() - i);
+      targetDate.setDate(1); // First day of the month
+      const monthIndex = targetDate.getMonth();
+      
+      // Calculate portfolio value at that point in time
+      const assetValuesAtDate = new Map<string, { quantity: number; averagePrice: number }>();
+      
+      // Process transactions up to this date
+      const relevantTransactions = transactions.filter(t => 
+        new Date(t.date) <= targetDate
+      );
+      
+      relevantTransactions.forEach(transaction => {
+        const existing = assetValuesAtDate.get(transaction.assetId) || { quantity: 0, averagePrice: 0 };
+        const transactionQuantity = parseFloat(transaction.quantity);
+        const transactionPrice = parseFloat(transaction.price);
+        
+        if (transaction.type === "alış") {
+          const currentValue = existing.quantity * existing.averagePrice;
+          const newValue = transactionQuantity * transactionPrice;
+          const newQuantity = existing.quantity + transactionQuantity;
+          const newAveragePrice = newQuantity > 0 ? (currentValue + newValue) / newQuantity : 0;
+          
+          assetValuesAtDate.set(transaction.assetId, {
+            quantity: newQuantity,
+            averagePrice: newAveragePrice,
+          });
+        } else if (transaction.type === "satış") {
+          assetValuesAtDate.set(transaction.assetId, {
+            quantity: Math.max(0, existing.quantity - transactionQuantity),
+            averagePrice: existing.averagePrice,
+          });
+        }
+      });
+      
+      // Calculate total value using current prices
+      let totalValue = 0;
+      const assets = await this.getAssets();
+      assetValuesAtDate.forEach((value, assetId) => {
+        const asset = assets.find(a => a.id === assetId);
+        if (asset && value.quantity > 0) {
+          totalValue += value.quantity * parseFloat(asset.currentPrice);
+        }
+      });
+      
+      performance.push({
+        month: months[monthIndex],
+        value: totalValue,
+      });
+    }
+    
+    return performance;
+  }
+
+  async getAssetDetails(): Promise<AssetDetail[]> {
+    const assets = await this.getAssets();
+    
+    return assets.map((asset) => {
+      const quantity = parseFloat(asset.quantity);
+      const currentPrice = parseFloat(asset.currentPrice);
+      const averagePrice = parseFloat(asset.averagePrice);
+      
+      const totalValue = quantity * currentPrice;
+      const totalCost = quantity * averagePrice;
+      const profit = totalValue - totalCost;
+      const change = totalCost > 0 ? ((currentPrice - averagePrice) / averagePrice) * 100 : 0;
+      const changeAmount = currentPrice - averagePrice;
+      
+      return {
+        ...asset,
+        totalValue,
+        change,
+        changeAmount,
+        profit,
+      };
+    });
   }
 }
 
