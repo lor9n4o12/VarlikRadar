@@ -155,14 +155,25 @@ export class DatabaseStorage implements IStorage {
   async getPortfolioSummary(): Promise<PortfolioSummary> {
     const assets = await this.getAssets();
     
-    let totalAssets = 0;
+    // Calculate total investment assets value
+    let investmentAssets = 0;
     assets.forEach((asset) => {
       const quantity = Number(asset.quantity) || 0;
       const currentPrice = Number(asset.currentPrice) || 0;
-      totalAssets += quantity * currentPrice;
+      investmentAssets += quantity * currentPrice;
     });
     
-    const totalDebt = 0; // Not implemented for now
+    // Get budget summary (income - expenses = cash balance)
+    const budgetSummary = await this.getBudgetSummary();
+    const cashBalance = budgetSummary.balance; // income - expenses
+    
+    // Total assets = investment assets + cash balance (if positive)
+    const totalAssets = investmentAssets + Math.max(0, cashBalance);
+    
+    // Total debt = negative cash balance (if expenses > income)
+    const totalDebt = cashBalance < 0 ? Math.abs(cashBalance) : 0;
+    
+    // Net worth = total assets - total debt
     const netWorth = totalAssets - totalDebt;
     
     // Calculate monthly change (simplified - comparing to average price)
@@ -173,8 +184,9 @@ export class DatabaseStorage implements IStorage {
       totalCost += quantity * averagePrice;
     });
     
-    const monthlyChange = totalCost > 0 ? ((totalAssets - totalCost) / totalCost) * 100 : 0;
-    const monthlyChangeAmount = totalAssets - totalCost;
+    const totalValue = investmentAssets + cashBalance;
+    const monthlyChange = totalCost > 0 ? ((investmentAssets - totalCost) / totalCost) * 100 : 0;
+    const monthlyChangeAmount = investmentAssets - totalCost;
     
     return {
       totalAssets,

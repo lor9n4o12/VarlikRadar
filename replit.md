@@ -32,6 +32,7 @@ Kullanıcıların Borsa İstanbul hisseleri, ABD hisseleri, ETF'ler, kripto para
 6. ✅ **CRUD İşlemleri**: Gelir/gider ekleme ve silme
 7. ✅ **Sidebar Navigasyon**: "Bütçe" menü öğesi eklendi
 8. ✅ **E2E Test**: Tüm işlevler test edildi ve onaylandı
+9. ✅ **Portfolio Entegrasyonu**: Bütçe bakiyesi Net Değer ve Toplam Varlık hesaplamalarına dahil edildi
 
 ### Çoklu Para Birimi Görüntüleme
 1. ✅ **Ayarlar Sayfası**: TRY, USD, EUR, BTC, ETH, Gram Altın seçenekleri
