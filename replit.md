@@ -20,9 +20,20 @@ Kullanıcıların Borsa İstanbul hisseleri, ABD hisseleri, ETF'ler, kripto para
 - **Database**: PostgreSQL (Neon) + Drizzle ORM
 - **Storage**: DatabaseStorage (persistent data)
 
-## Son Güncellemeler (15 Kasım 2025)
+## Son Güncellemeler (14 Aralık 2025)
 
-### PostgreSQL Database Migration (YENİ!)
+### Gerçek Zamanlı Fiyat Güncellemeleri (YENİ!)
+1. ✅ **Price Service**: server/services/priceService.ts - Binance ve Yahoo Finance API entegrasyonu
+2. ✅ **Kripto Fiyatları**: Binance API (BTC, ETH, 1INCH vb. - USDT paritesi)
+3. ✅ **BIST Hisseleri**: Yahoo Finance API (.IS suffix - THYAO.IS, GARAN.IS)
+4. ✅ **ABD Hisseleri**: Yahoo Finance API (AAPL, TSLA, MSFT vb.)
+5. ✅ **Dashboard Butonu**: "Fiyatları Güncelle" butonu ile tek tıkla güncelleme
+6. ✅ **Loading States**: Güncelleme sırasında dönen ikon ve disabled state
+7. ✅ **Toast Notifications**: Başarı/hata bildirimleri
+8. ✅ **Son Güncelleme**: Header'da son güncelleme zamanı gösterimi
+9. ✅ **Visual Indicators**: Yeşil/kırmızı trend okları ile fiyat değişimi
+
+### PostgreSQL Database Migration (15 Kasım 2025)
 1. ✅ **Database Setup**: Neon PostgreSQL connection (server/db.ts)
 2. ✅ **Storage Migration**: MemStorage → DatabaseStorage with Drizzle ORM
 3. ✅ **Decimal Field Bug Fix**: parseFloat() → Number() || 0 (NaN prevention)
@@ -67,9 +78,10 @@ Kullanıcıların Borsa İstanbul hisseleri, ABD hisseleri, ETF'ler, kripto para
 - `shared/schema.ts`: Tüm veri modelleri, Drizzle ORM schema, Zod validation schema'ları
 
 #### Backend
-- `server/routes.ts`: Express API routes (CRUD operations, portfolio analytics)
-- `server/storage.ts`: In-memory storage implementation (IStorage interface)
+- `server/routes.ts`: Express API routes (CRUD operations, portfolio analytics, price updates)
+- `server/storage.ts`: DatabaseStorage implementation (IStorage interface)
 - `server/index.ts`: Express server ve Vite middleware
+- `server/services/priceService.ts`: Gerçek zamanlı fiyat servisi (Binance + Yahoo Finance)
 
 #### Frontend Pages
 - `client/src/pages/dashboard.tsx`: Ana dashboard sayfası (özet kartlar, grafikler, varlık listesi)
@@ -109,6 +121,10 @@ Kullanıcıların Borsa İstanbul hisseleri, ABD hisseleri, ETF'ler, kripto para
 - `GET /api/portfolio/allocation` - Varlık dağılımı (pasta grafik için)
 - `GET /api/portfolio/performance` - Aylık performans (çizgi grafik için)
 - `GET /api/portfolio/details` - Detaylı varlık analizi
+
+### Price Updates (Fiyat Güncellemeleri)
+- `POST /api/prices/update` - Tüm varlık fiyatlarını güncelle (Binance + Yahoo Finance)
+- `GET /api/prices/:symbol` - Tek varlık fiyatını getir (query: type, market)
 
 ## Tasarım Sistemi
 
@@ -153,10 +169,10 @@ Uygulama http://localhost:5000 adresinde çalışacaktır.
 1. **Otomatik Test Coverage**: Integration testler ekle (analytics refresh davranışı için)
 2. **Manuel QA**: Gerçekçi seed data ile edge case'leri test et
 3. **Transaction Deletion**: Silme işlemi için backfill logic ekle
-4. **Gerçek Zamanlı Fiyatlar**: External API integration (Yahoo Finance, Binance vb.)
+4. ~~**Gerçek Zamanlı Fiyatlar**: External API integration~~ ✅ TAMAMLANDI
 5. **Multi-Currency Support**: Döviz kurları ile otomatik hesaplama
 6. **Export/Import**: Portfolio verilerini CSV/JSON olarak export/import
-7. **Production Database**: Neon PostgreSQL migration
+7. **Otomatik Fiyat Yenileme**: Belirli aralıklarla otomatik güncelleme (polling)
 
 ## Notlar
 
