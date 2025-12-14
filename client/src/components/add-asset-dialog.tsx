@@ -1,7 +1,6 @@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
@@ -10,6 +9,8 @@ import { insertAssetSchema, type InsertAsset } from "@shared/schema";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { RefreshCw } from "lucide-react";
+import { useState } from "react";
 
 interface AddAssetDialogProps {
   open: boolean;
@@ -18,6 +19,7 @@ interface AddAssetDialogProps {
 
 export function AddAssetDialog({ open, onOpenChange }: AddAssetDialogProps) {
   const { toast } = useToast();
+  const [isFetchingPrice, setIsFetchingPrice] = useState(false);
   
   const form = useForm<InsertAsset>({
     resolver: zodResolver(insertAssetSchema),
@@ -32,6 +34,48 @@ export function AddAssetDialog({ open, onOpenChange }: AddAssetDialogProps) {
       currency: "TRY",
     },
   });
+
+  const fetchCurrentPrice = async () => {
+    const symbol = form.getValues("symbol");
+    const type = form.getValues("type");
+    const market = form.getValues("market");
+
+    if (!symbol) {
+      toast({
+        title: "Uyarı",
+        description: "Lütfen önce sembol giriniz",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsFetchingPrice(true);
+    try {
+      const response = await fetch(`/api/prices/${symbol}?type=${type}&market=${market}`);
+      if (response.ok) {
+        const data = await response.json();
+        form.setValue("currentPrice", data.price.toFixed(2));
+        toast({
+          title: "Fiyat Güncellendi",
+          description: `${symbol} güncel fiyatı: ${data.price.toFixed(2)}`,
+        });
+      } else {
+        toast({
+          title: "Fiyat Bulunamadı",
+          description: "Bu sembol için fiyat bilgisi alınamadı",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Hata",
+        description: "Fiyat bilgisi alınırken bir hata oluştu",
+        variant: "destructive",
+      });
+    } finally {
+      setIsFetchingPrice(false);
+    }
+  };
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertAsset) => {
@@ -217,9 +261,21 @@ export function AddAssetDialog({ open, onOpenChange }: AddAssetDialogProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Güncel Fiyat</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-current-price" />
-                      </FormControl>
+                      <div className="flex gap-2">
+                        <FormControl>
+                          <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-current-price" />
+                        </FormControl>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={fetchCurrentPrice}
+                          disabled={isFetchingPrice}
+                          data-testid="button-fetch-price"
+                        >
+                          <RefreshCw className={`h-4 w-4 ${isFetchingPrice ? "animate-spin" : ""}`} />
+                        </Button>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
