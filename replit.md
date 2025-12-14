@@ -7,6 +7,7 @@ Kullanıcıların Borsa İstanbul hisseleri, ABD hisseleri, ETF'ler, kripto para
 ### Temel Özellikler
 - **Dashboard (Portföyüm)**: Net değer gösterimi, varlık dağılım grafikleri, aylık performans grafikleri ve varlık listesi
 - **İşlemler**: Alım/satım işlemlerini kaydetme ve görüntüleme
+- **Bütçe Takibi**: Gelir ve gider takibi, kategori bazlı dağılım grafikleri, bakiye hesaplama
 - **Raporlar**: Detaylı performans raporları ve analizler
 - **Ayarlar**: Platform ayarları ve kullanıcı tercihleri
 
@@ -22,7 +23,17 @@ Kullanıcıların Borsa İstanbul hisseleri, ABD hisseleri, ETF'ler, kripto para
 
 ## Son Güncellemeler (14 Aralık 2025)
 
-### Çoklu Para Birimi Görüntüleme (YENİ!)
+### Bütçe Takibi Özelliği (YENİ!)
+1. ✅ **Bütçe Sayfası**: /butce - Gelir ve gider yönetimi
+2. ✅ **Gelir Kategorileri**: maaş, kira, temettü, faiz, serbest, diğer
+3. ✅ **Gider Kategorileri**: market, faturalar, ulaşım, sağlık, eğlence, giyim, yemek, kira, kredi, sigorta, diğer
+4. ✅ **Özet Kartlar**: Toplam Gelir, Toplam Gider, Bakiye
+5. ✅ **Pasta Grafikler**: Gelir ve gider dağılımı kategori bazlı
+6. ✅ **CRUD İşlemleri**: Gelir/gider ekleme ve silme
+7. ✅ **Sidebar Navigasyon**: "Bütçe" menü öğesi eklendi
+8. ✅ **E2E Test**: Tüm işlevler test edildi ve onaylandı
+
+### Çoklu Para Birimi Görüntüleme
 1. ✅ **Ayarlar Sayfası**: TRY, USD, EUR, BTC, ETH, Gram Altın seçenekleri
 2. ✅ **Currency Context**: client/src/lib/currency-context.tsx - Global currency state
 3. ✅ **Exchange Rates API**: GET /api/exchange-rates - Döviz kurları (Yahoo Finance + Binance)
@@ -94,6 +105,7 @@ Kullanıcıların Borsa İstanbul hisseleri, ABD hisseleri, ETF'ler, kripto para
 #### Frontend Pages
 - `client/src/pages/dashboard.tsx`: Ana dashboard sayfası (özet kartlar, grafikler, varlık listesi)
 - `client/src/pages/transactions.tsx`: İşlem geçmişi sayfası
+- `client/src/pages/budget.tsx`: Bütçe takibi sayfası (gelir/gider yönetimi, grafikler)
 - `client/src/pages/reports.tsx`: Raporlar sayfası
 - `client/src/pages/settings.tsx`: Ayarlar sayfası
 
