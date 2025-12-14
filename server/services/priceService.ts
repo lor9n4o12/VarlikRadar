@@ -142,3 +142,30 @@ export async function fetchSingleAssetPrice(
   }
   return null;
 }
+
+export async function fetchExchangeRates(): Promise<Record<string, number>> {
+  const rates: Record<string, number> = { TRY: 1 };
+  
+  // Fetch USD/TRY 
+  const usdTry = await fetchYahooPrice("USDTRY=X", "Diğer");
+  if (usdTry) rates.USD = usdTry;
+  
+  // Fetch EUR/TRY
+  const eurTry = await fetchYahooPrice("EURTRY=X", "Diğer");
+  if (eurTry) rates.EUR = eurTry;
+  
+  // Fetch BTC price in USD, then convert to TRY
+  const btcUsd = await fetchBinancePrice("BTC");
+  if (btcUsd && usdTry) rates.BTC = btcUsd * usdTry;
+  
+  // Fetch ETH price in USD, then convert to TRY
+  const ethUsd = await fetchBinancePrice("ETH");
+  if (ethUsd && usdTry) rates.ETH = ethUsd * usdTry;
+  
+  // Gold price (XAU/USD then convert to TRY per gram)
+  // 1 troy oz = 31.1035 grams
+  const goldOzUsd = await fetchYahooPrice("GC=F", "Diğer");
+  if (goldOzUsd && usdTry) rates.XAU = (goldOzUsd / 31.1035) * usdTry;
+  
+  return rates;
+}

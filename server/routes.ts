@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertAssetSchema, insertTransactionSchema } from "@shared/schema";
-import { updateAllAssetPrices, fetchSingleAssetPrice } from "./services/priceService";
+import { updateAllAssetPrices, fetchSingleAssetPrice, fetchExchangeRates } from "./services/priceService";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Asset routes
@@ -192,6 +192,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ symbol, price, fetchedAt: new Date().toISOString() });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch price" });
+    }
+  });
+
+  // Exchange rates endpoint
+  app.get("/api/exchange-rates", async (req, res) => {
+    try {
+      const rates = await fetchExchangeRates();
+      res.json({ rates, updatedAt: new Date().toISOString() });
+    } catch (error) {
+      console.error("Exchange rates error:", error);
+      res.status(500).json({ error: "Failed to fetch exchange rates" });
     }
   });
 

@@ -9,12 +9,14 @@ import { AssetAllocationChart } from "@/components/asset-allocation-chart";
 import { MonthlyPerformanceChart } from "@/components/monthly-performance-chart";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useDisplayCurrency } from "@/lib/currency-context";
 import type { PortfolioSummary, AssetDetail, AssetAllocation, MonthlyPerformance } from "@shared/schema";
 
 export default function Dashboard() {
   const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const { toast } = useToast();
+  const { formatDisplayCurrency, displayCurrency, isLoadingRates } = useDisplayCurrency();
 
   const { data: summary, isLoading: summaryLoading, error: summaryError } = useQuery<PortfolioSummary>({
     queryKey: ["/api/portfolio/summary"],
@@ -59,11 +61,7 @@ export default function Dashboard() {
   });
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("tr-TR", {
-      style: "currency",
-      currency: "TRY",
-      minimumFractionDigits: 2,
-    }).format(amount);
+    return formatDisplayCurrency(amount);
   };
 
   const formatPercent = (percent: number) => {

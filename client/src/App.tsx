@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { CurrencyProvider } from "@/lib/currency-context";
 import { useEffect } from "react";
 import Dashboard from "@/pages/dashboard";
 import Transactions from "@/pages/transactions";
@@ -39,22 +40,24 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <SidebarProvider style={style as React.CSSProperties}>
-          <div className="flex h-screen w-full">
-            <AppSidebar />
-            <div className="flex flex-col flex-1 overflow-hidden">
-              <header className="flex items-center justify-between p-4 border-b bg-background">
-                <SidebarTrigger data-testid="button-sidebar-toggle" />
-              </header>
-              <main className="flex-1 overflow-auto p-6 bg-background">
-                <Router />
-              </main>
+      <CurrencyProvider>
+        <TooltipProvider>
+          <SidebarProvider style={style as React.CSSProperties}>
+            <div className="flex h-screen w-full">
+              <AppSidebar />
+              <div className="flex flex-col flex-1 overflow-hidden">
+                <header className="flex items-center justify-between p-4 border-b bg-background">
+                  <SidebarTrigger data-testid="button-sidebar-toggle" />
+                </header>
+                <main className="flex-1 overflow-auto p-6 bg-background">
+                  <Router />
+                </main>
+              </div>
             </div>
-          </div>
-        </SidebarProvider>
-        <Toaster />
-      </TooltipProvider>
+          </SidebarProvider>
+          <Toaster />
+        </TooltipProvider>
+      </CurrencyProvider>
     </QueryClientProvider>
   );
 }

@@ -3,10 +3,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
+import { useDisplayCurrency } from "@/lib/currency-context";
 
 export default function Settings() {
   const [darkMode, setDarkMode] = useState(false);
-  const [currency, setCurrency] = useState("TRY");
+  const { displayCurrency, setDisplayCurrency } = useDisplayCurrency();
   const [language, setLanguage] = useState("tr");
 
   useEffect(() => {
@@ -67,7 +68,7 @@ export default function Settings() {
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="currency">Ana Para Birimi</Label>
-            <Select value={currency} onValueChange={setCurrency}>
+            <Select value={displayCurrency} onValueChange={setDisplayCurrency}>
               <SelectTrigger id="currency" data-testid="select-currency">
                 <SelectValue />
               </SelectTrigger>
@@ -75,6 +76,9 @@ export default function Settings() {
                 <SelectItem value="TRY">Türk Lirası (₺)</SelectItem>
                 <SelectItem value="USD">Amerikan Doları ($)</SelectItem>
                 <SelectItem value="EUR">Euro (€)</SelectItem>
+                <SelectItem value="BTC">Bitcoin (₿)</SelectItem>
+                <SelectItem value="ETH">Ethereum (Ξ)</SelectItem>
+                <SelectItem value="XAU">Gram Altın (gr)</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-sm text-muted-foreground">
