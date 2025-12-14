@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertAssetSchema, insertTransactionSchema } from "@shared/schema";
+import { updateAllAssetPrices, fetchSingleAssetPrice } from "./services/priceService";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Asset routes
@@ -148,6 +149,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(details);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch asset details" });
+    }
+  });
+
+  // Price update routes
+  app.post("/api/prices/update", async (req, res) => {
+    try {
+      const results = await updateAllAssetPrices();
+      const successful = results.filter(r => r.success).length;
+      const failed = results.filter(r => !r.success).length;
+      
+      res.json({
+        message: `Fiyatlar güncellendi: ${successful} başarılı, ${failed} başarısız`,
+        results,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Price update error:", error);
+      res.status(500).json({ error: "Fiyatlar güncellenirken hata oluştu" });
+    }
+  });
+
+  app.get("/api/prices/:symbol", async (req, res) => {
+    try {
+      const { symbol } = req.params;
+      const { type, market } = req.query;
+      
+      if (!type || !market) {
+        return res.status(400).json({ error: "type and market query params required" });
+      }
+      
+      const price = await fetchSingleAssetPrice(
+        symbol,
+        type as string,
+        market as string
+      );
+      
+      if (price === null) {
+        return res.status(404).json({ error: "Price not found" });
+      }
+      
+      res.json({ symbol, price, fetchedAt: new Date().toISOString() });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch price" });
     }
   });
 
