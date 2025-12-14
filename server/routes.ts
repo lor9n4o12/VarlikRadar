@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertAssetSchema, insertTransactionSchema } from "@shared/schema";
+import { insertAssetSchema, insertTransactionSchema, insertIncomeSchema, insertExpenseSchema } from "@shared/schema";
 import { updateAllAssetPrices, fetchSingleAssetPrice, fetchExchangeRates } from "./services/priceService";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -203,6 +203,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Exchange rates error:", error);
       res.status(500).json({ error: "Failed to fetch exchange rates" });
+    }
+  });
+
+  // Income routes
+  app.get("/api/incomes", async (req, res) => {
+    try {
+      const incomes = await storage.getIncomes();
+      res.json(incomes);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch incomes" });
+    }
+  });
+
+  app.post("/api/incomes", async (req, res) => {
+    try {
+      const validated = insertIncomeSchema.parse(req.body);
+      const income = await storage.createIncome(validated);
+      res.status(201).json(income);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid income data" });
+    }
+  });
+
+  app.delete("/api/incomes/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteIncome(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Income not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete income" });
+    }
+  });
+
+  // Expense routes
+  app.get("/api/expenses", async (req, res) => {
+    try {
+      const expenses = await storage.getExpenses();
+      res.json(expenses);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch expenses" });
+    }
+  });
+
+  app.post("/api/expenses", async (req, res) => {
+    try {
+      const validated = insertExpenseSchema.parse(req.body);
+      const expense = await storage.createExpense(validated);
+      res.status(201).json(expense);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid expense data" });
+    }
+  });
+
+  app.delete("/api/expenses/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteExpense(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Expense not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete expense" });
+    }
+  });
+
+  // Budget summary route
+  app.get("/api/budget/summary", async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      const summary = await storage.getBudgetSummary(
+        startDate ? new Date(startDate as string) : undefined,
+        endDate ? new Date(endDate as string) : undefined
+      );
+      res.json(summary);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch budget summary" });
     }
   });
 

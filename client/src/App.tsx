@@ -11,6 +11,7 @@ import Dashboard from "@/pages/dashboard";
 import Transactions from "@/pages/transactions";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
+import Budget from "@/pages/budget";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -18,6 +19,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/islemler" component={Transactions} />
+      <Route path="/butce" component={Budget} />
       <Route path="/raporlar" component={Reports} />
       <Route path="/ayarlar" component={Settings} />
       <Route component={NotFound} />

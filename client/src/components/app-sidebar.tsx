@@ -1,4 +1,4 @@
-import { LayoutDashboard, ArrowLeftRight, FileText, Settings } from "lucide-react";
+import { LayoutDashboard, ArrowLeftRight, FileText, Settings, Wallet } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -22,6 +22,11 @@ const menuItems = [
     title: "İşlemler",
     url: "/islemler",
     icon: ArrowLeftRight,
+  },
+  {
+    title: "Bütçe",
+    url: "/butce",
+    icon: Wallet,
   },
   {
     title: "Raporlar",
