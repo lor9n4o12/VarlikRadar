@@ -92,3 +92,83 @@ export type AssetDetail = Asset & {
   changeAmount: number; // Değişim (Tutar)
   profit: number; // Kar/Zarar
 };
+
+// Gelir/Gider kategorileri
+export const incomeCategories = [
+  "maaş",
+  "kira",
+  "temettü",
+  "faiz",
+  "serbest",
+  "diğer",
+] as const;
+
+export const expenseCategories = [
+  "market",
+  "faturalar",
+  "ulaşım",
+  "sağlık",
+  "eğlence",
+  "giyim",
+  "yemek",
+  "kira",
+  "kredi",
+  "sigorta",
+  "diğer",
+] as const;
+
+export type IncomeCategory = typeof incomeCategories[number];
+export type ExpenseCategory = typeof expenseCategories[number];
+
+// Gelirler tablosu
+export const incomes = pgTable("incomes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  category: text("category").notNull(),
+  description: text("description").notNull(),
+  amount: decimal("amount", { precision: 18, scale: 2 }).notNull(),
+  currency: text("currency").notNull().default("TRY"),
+  date: timestamp("date").notNull(),
+  isRecurring: integer("is_recurring").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertIncomeSchema = createInsertSchema(incomes, {
+  date: z.coerce.date(),
+}).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertIncome = z.infer<typeof insertIncomeSchema>;
+export type Income = typeof incomes.$inferSelect;
+
+// Giderler tablosu
+export const expenses = pgTable("expenses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  category: text("category").notNull(),
+  description: text("description").notNull(),
+  amount: decimal("amount", { precision: 18, scale: 2 }).notNull(),
+  currency: text("currency").notNull().default("TRY"),
+  date: timestamp("date").notNull(),
+  isRecurring: integer("is_recurring").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertExpenseSchema = createInsertSchema(expenses, {
+  date: z.coerce.date(),
+}).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertExpense = z.infer<typeof insertExpenseSchema>;
+export type Expense = typeof expenses.$inferSelect;
+
+// Bütçe özeti tipi
+export type BudgetSummary = {
+  totalIncome: number;
+  totalExpense: number;
+  balance: number;
+  incomeByCategory: { category: string; amount: number; percentage: number }[];
+  expenseByCategory: { category: string; amount: number; percentage: number }[];
+};

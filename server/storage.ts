@@ -7,11 +7,18 @@ import {
   type AssetAllocation,
   type MonthlyPerformance,
   type AssetDetail,
+  type Income,
+  type InsertIncome,
+  type Expense,
+  type InsertExpense,
+  type BudgetSummary,
   assets,
-  transactions
+  transactions,
+  incomes,
+  expenses
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, gte, lte, and } from "drizzle-orm";
 
 export interface IStorage {
   // Asset operations
@@ -33,6 +40,21 @@ export interface IStorage {
   getAssetAllocation(): Promise<AssetAllocation[]>;
   getMonthlyPerformance(): Promise<MonthlyPerformance[]>;
   getAssetDetails(): Promise<AssetDetail[]>;
+  
+  // Income operations
+  getIncomes(): Promise<Income[]>;
+  getIncome(id: string): Promise<Income | undefined>;
+  createIncome(income: InsertIncome): Promise<Income>;
+  deleteIncome(id: string): Promise<boolean>;
+  
+  // Expense operations
+  getExpenses(): Promise<Expense[]>;
+  getExpense(id: string): Promise<Expense | undefined>;
+  createExpense(expense: InsertExpense): Promise<Expense>;
+  deleteExpense(id: string): Promise<boolean>;
+  
+  // Budget calculations
+  getBudgetSummary(startDate?: Date, endDate?: Date): Promise<BudgetSummary>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -293,6 +315,102 @@ export class DatabaseStorage implements IStorage {
         profit,
       };
     });
+  }
+
+  // Income operations
+  async getIncomes(): Promise<Income[]> {
+    return await db.select().from(incomes).orderBy(desc(incomes.date));
+  }
+
+  async getIncome(id: string): Promise<Income | undefined> {
+    const [income] = await db.select().from(incomes).where(eq(incomes.id, id));
+    return income || undefined;
+  }
+
+  async createIncome(insertIncome: InsertIncome): Promise<Income> {
+    const [income] = await db
+      .insert(incomes)
+      .values(insertIncome)
+      .returning();
+    return income;
+  }
+
+  async deleteIncome(id: string): Promise<boolean> {
+    const result = await db.delete(incomes).where(eq(incomes.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  // Expense operations
+  async getExpenses(): Promise<Expense[]> {
+    return await db.select().from(expenses).orderBy(desc(expenses.date));
+  }
+
+  async getExpense(id: string): Promise<Expense | undefined> {
+    const [expense] = await db.select().from(expenses).where(eq(expenses.id, id));
+    return expense || undefined;
+  }
+
+  async createExpense(insertExpense: InsertExpense): Promise<Expense> {
+    const [expense] = await db
+      .insert(expenses)
+      .values(insertExpense)
+      .returning();
+    return expense;
+  }
+
+  async deleteExpense(id: string): Promise<boolean> {
+    const result = await db.delete(expenses).where(eq(expenses.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  // Budget calculations
+  async getBudgetSummary(startDate?: Date, endDate?: Date): Promise<BudgetSummary> {
+    let allIncomes = await this.getIncomes();
+    let allExpenses = await this.getExpenses();
+    
+    // Filter by date range if provided
+    if (startDate) {
+      allIncomes = allIncomes.filter(i => new Date(i.date) >= startDate);
+      allExpenses = allExpenses.filter(e => new Date(e.date) >= startDate);
+    }
+    if (endDate) {
+      allIncomes = allIncomes.filter(i => new Date(i.date) <= endDate);
+      allExpenses = allExpenses.filter(e => new Date(e.date) <= endDate);
+    }
+    
+    // Calculate totals
+    const totalIncome = allIncomes.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    const totalExpense = allExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    const balance = totalIncome - totalExpense;
+    
+    // Group by category
+    const incomeByCategory = new Map<string, number>();
+    allIncomes.forEach(i => {
+      const current = incomeByCategory.get(i.category) || 0;
+      incomeByCategory.set(i.category, current + (Number(i.amount) || 0));
+    });
+    
+    const expenseByCategory = new Map<string, number>();
+    allExpenses.forEach(e => {
+      const current = expenseByCategory.get(e.category) || 0;
+      expenseByCategory.set(e.category, current + (Number(e.amount) || 0));
+    });
+    
+    return {
+      totalIncome,
+      totalExpense,
+      balance,
+      incomeByCategory: Array.from(incomeByCategory.entries()).map(([category, amount]) => ({
+        category,
+        amount,
+        percentage: totalIncome > 0 ? (amount / totalIncome) * 100 : 0,
+      })),
+      expenseByCategory: Array.from(expenseByCategory.entries()).map(([category, amount]) => ({
+        category,
+        amount,
+        percentage: totalExpense > 0 ? (amount / totalExpense) * 100 : 0,
+      })),
+    };
   }
 }
 
