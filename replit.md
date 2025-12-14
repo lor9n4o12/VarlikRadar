@@ -22,7 +22,15 @@ Kullanıcıların Borsa İstanbul hisseleri, ABD hisseleri, ETF'ler, kripto para
 
 ## Son Güncellemeler (14 Aralık 2025)
 
-### Gerçek Zamanlı Fiyat Güncellemeleri (YENİ!)
+### Çoklu Para Birimi Görüntüleme (YENİ!)
+1. ✅ **Ayarlar Sayfası**: TRY, USD, EUR, BTC, ETH, Gram Altın seçenekleri
+2. ✅ **Currency Context**: client/src/lib/currency-context.tsx - Global currency state
+3. ✅ **Exchange Rates API**: GET /api/exchange-rates - Döviz kurları (Yahoo Finance + Binance)
+4. ✅ **Dashboard Dönüşümü**: Toplam Varlık, Toplam Borç, Net Değer seçilen para biriminde gösterilir
+5. ✅ **LocalStorage Persistance**: Seçilen para birimi tarayıcıda saklanır
+6. ✅ **Formatlamalar**: BTC/ETH 6 ondalık, Gram Altın 2 ondalık, Fiat para birimleri Türkçe format
+
+### Gerçek Zamanlı Fiyat Güncellemeleri
 1. ✅ **Price Service**: server/services/priceService.ts - Binance ve Yahoo Finance API entegrasyonu
 2. ✅ **Kripto Fiyatları**: Binance API (BTC, ETH, 1INCH vb. - USDT paritesi)
 3. ✅ **BIST Hisseleri**: Yahoo Finance API (.IS suffix - THYAO.IS, GARAN.IS)
